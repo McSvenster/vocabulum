@@ -67,15 +67,28 @@ class Trainer
   end
 
   def training()
-
-
+    treffer = 0
+    @wortwolke.size.times do
+      id = rand(1..3)
+      treffer += aenigma(id)
+    end
+    return treffer
   end
 
   def aenigma(id)
     verbum = @wortwolke[id]
     frage = verbum.uebersetzungen[@ausgangssprachennr]
     antwort = verbum.uebersetzungen[@uebersetzungssprachennr]
-    return frage, antwort
+    print "Die Übersetzung für #{frage} lautet: "
+    versuch = gets
+    treffer = 0
+    if versuch.chomp! == antwort
+      puts "Jawoll"
+      return 1
+    else
+      puts "Nope :-( :: #{antwort}"
+      return 0
+    end
   end
 
 end
@@ -85,5 +98,4 @@ corpus = Corpus.new("verbi.csv")
 ausgangssprache = corpus.sprachen.index("de")
 uebersetzungssprache = corpus.sprachen.index("lat")
 trainer = Trainer.new(corpus.wortwolke, ausgangssprache, uebersetzungssprache)
-id = rand(1..3)
-puts "#{trainer.aenigma(id).first} : #{trainer.aenigma(id).last}"
+puts "Du hattest #{trainer.training} Treffer."
