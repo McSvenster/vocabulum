@@ -58,18 +58,23 @@ end
 
 class Trainer
 
-  def initialize(corpus,ausgangssprache,uebersetzungssprache,mixed=false)
-    @corpus = corpus
-    @ausgangssprache = ausgangssprache
-    @uebersetzungsprache = uebersetzungssprache
+  def initialize(wortwolke,ausgangssprachennr,uebersetzungssprachennr,mixed=false)
+    @wortwolke = wortwolke
+    @ausgangssprachennr = ausgangssprachennr
+    @uebersetzungssprachennr = uebersetzungssprachennr
     @mixed = mixed
 
   end
 
+  def training()
+
+
+  end
+
   def aenigma(id)
-    verbum = @corpus.wortwolke[id]
-    frage = verbum.uebersetzungen[@corpus.sprachen.index(@ausgangssprache)]
-    antwort = verbum.uebersetzungen[@corpus.sprachen.index(@uebersetzungsprache)]
+    verbum = @wortwolke[id]
+    frage = verbum.uebersetzungen[@ausgangssprachennr]
+    antwort = verbum.uebersetzungen[@uebersetzungssprachennr]
     return frage, antwort
   end
 
@@ -77,6 +82,8 @@ end
 
 puts "Dann wollen wir mal..."
 corpus = Corpus.new("verbi.csv")
-trainer = Trainer.new(corpus, "de", "lat")
+ausgangssprache = corpus.sprachen.index("de")
+uebersetzungssprache = corpus.sprachen.index("lat")
+trainer = Trainer.new(corpus.wortwolke, ausgangssprache, uebersetzungssprache)
 id = rand(1..3)
 puts "#{trainer.aenigma(id).first} : #{trainer.aenigma(id).last}"
