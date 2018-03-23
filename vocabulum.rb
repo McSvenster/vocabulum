@@ -16,29 +16,19 @@ class Lima
       else
         verbi = versus.split(";")[0..-2]
         treffsicherheiten = versus.split(";")[-1]
-        trefferliste = {}
-        (0..@linguae.size).each do |lnr|
-          trefferliste[lnr] = 0
-        end
-        c = 0
-        treffsicherheiten.split(":").each do |tl|
-          trefferliste[c] = tl.split(",")
-          c += 1  
-        end
+        trefferliste = treffsicherheiten.split(",")
         @vocabuli << Vocabulum.new(@linguae,verbi,trefferliste)
       end
       z += 1
     end
   end
 
-  def speichere_neue_daten(linguae,vocabuli)
+  def speichere_neue_daten(corpus)
     system("cp #{@dateiname} #{@dateiname}.bak")
     csv = File.open(@dateiname, "w") 
-    csv.write(linguae.join(";") + ";Treffsicherheit\n")
-    vocabuli.each do |vocabulum|
-      if vocabulum.verbi.size == linguae.size
-        csv.write(vocabulum.verbi.join(";") + ";" + vocabulum.schreibe_trefferliste + "\n")
-      end
+    csv.write(corpus.linguae.join(";") + ";Treffsicherheit\n")
+    corpus.vocabuli.each do |vocabulum|
+      csv.write(vocabulum.verbi.join(";") + ";" + vocabulum.schreibe_trefferliste + "\n")
     end
     csv.close
   end
@@ -54,21 +44,31 @@ class Vocabulum
     @trefferliste = trefferliste
   end
 
-  def zeige_treffer(ausgangssprachennr,uebersetzungssprachennr)
-    treffer = @trefferliste[ausgangssprachennr]
-    return treffer[uebersetzungssprachennr].to_i
+  def zeige_treffer(uebersetzungssprachennr)
+    return @trefferliste[uebersetzungssprachennr-1].to_i
   end
 
-  def schreibe_treffer(ausgangssprachennr,uebersetzungssprachennr,treffer)
-    @trefferliste[ausgangssprachennr][uebersetzungssprachennr] = treffer
+  def schreibe_treffer(uebersetzungssprachennr,treffer)
+    @trefferliste[uebersetzungssprachennr-1] = treffer
   end
 
   def schreibe_trefferliste()
-    tla = []
-    @trefferliste.each do |tl|
-      tla << tl.join(",")
+    return @trefferliste.join(",")
+  end
+
+  def erweitere(corpus_linguae)
+    corpus_verbi = []
+    corpus_trefferliste = []
+    corpus_linguae.each do |l|
+      if @linguae.include?(l)
+        corpus_verbi[corpus_linguae.index(l)] = @verbi[@linguae.index(l)]
+        corpus_trefferliste[corpus_linguae.index(l)] = @trefferliste[@linguae.index(l)]
+      else
+        corpus_verbi[corpus_linguae.index(l)] = ""
+        corpus_trefferliste[corpus_linguae.index(l)] = 0
+      end
     end
-    return tla.join(":")
+    return Vocabulum.new(corpus_linguae, corpus_verbi, corpus_trefferliste)
   end
 
 end
@@ -100,6 +100,11 @@ class Corpus
     return uebungscorpus
   end
 
+  def ergaenze(vocabulum)
+    @vocabuli << vocabulum.erweitere(linguae)
+    
+  end
+
 end
 
 
@@ -116,7 +121,7 @@ class Trainer
 
   def training(durchlaeufe)
     durchlaeufe.times do
-      nr = rand(1..@uebungscorpus.vocabuli.size)
+      nr = rand(0..@uebungscorpus.vocabuli.size-1)
       aenigma(nr)
     end
 
@@ -130,24 +135,23 @@ class Trainer
     system('clear')
     print "Die Übersetzung für #{frage} lautet: "
     versuch = gets
-    treffer = verbum.zeige_treffer(@ausgangssprachennr,@uebersetzungssprachennr)
+    treffer = verbum.zeige_treffer(@uebersetzungssprachennr)
     if versuch.chomp! == antwort
       puts "Jawoll"
       treffer += 1
       @heute_korrekt += 1
       sleep 1
-      return 1
     else
       puts "Nope :-( Die Antwort lautet ::::  #{antwort}  ::::"
       treffer -= 1 if treffer > 0
       sleep 2
-      return 0
     end
-    verbum.schreibe_treffer(@ausgangssprachennr,@uebersetzungssprachennr,treffer)
+    verbum.schreibe_treffer(@uebersetzungssprachennr,treffer)
   end
 
 end
 
+system('clear')
 puts "Dann wollen wir mal..."
 
 ## Daten einlesen
@@ -203,16 +207,21 @@ while wortliste.size < 3
   end
   woertchen.chomp!
   wort,uebersetzung = woertchen.split(":")
-  wort = wort.split()
-  uebersetzung = uebersetzung.split()
+  wort = wort.strip()
+  uebersetzung = uebersetzung.strip()
   wortliste[wort] = uebersetzung
 end
 
 ## neue Vokabeln dem Corpus hinzufuegen
+wortliste.each do |w,u|
+  v = Vocabulum.new(["de",uebersetzungssprache], [w,u], 0)
+  corpus.ergaenze(v)
+end
+
 
 uebungscorpus = corpus.extrahiere_uebungscorpus(ausgangssprachennr, uebersetzungssprachennr, 5)
 trainer = Trainer.new(uebungscorpus, ausgangssprachennr, uebersetzungssprachennr)
 treffer = trainer.training(3)
-uebungsdatei.speichere_neue_daten(corpus.vocabuli)
+uebungsdatei.speichere_neue_daten(corpus)
 system('clear')
 puts "Du hattest #{treffer} Treffer."
