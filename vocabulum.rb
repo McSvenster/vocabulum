@@ -12,13 +12,12 @@ class Lima
     File.read(@dateiname).split("\n").each do |versus|
       versus.chomp! #Zeilenumbruch entfernen
       if z == 0
-        @linguae = versus.split(";")[1..-2]
+        @linguae = versus.split(";")[0..-2]
       else
-        id = versus.split(";")[0].to_i
-        verbi = versus.split(";")[1..-2]
+        verbi = versus.split(";")[0..-2]
         treffsicherheiten = versus.split(";")[-1]
         trefferliste = {}
-        (1..@linguae.size).each do |lnr|
+        (0..@linguae.size).each do |lnr|
           trefferliste[lnr] = 0
         end
         c = 0
@@ -26,18 +25,20 @@ class Lima
           trefferliste[c] = tl.split(",")
           c += 1  
         end
-        @vocabuli << Vocabulum.new(id,@linguae,verbi,trefferliste)
+        @vocabuli << Vocabulum.new(@linguae,verbi,trefferliste)
       end
       z += 1
     end
   end
 
-  def speichere_neue_daten(vocabuli)
+  def speichere_neue_daten(linguae,vocabuli)
     system("cp #{@dateiname} #{@dateiname}.bak")
     csv = File.open(@dateiname, "w") 
-    csv.write(";" + @linguae.join(";") + ";Treffsicherheit\n")
-    vocabuli.each do |id,vocabulum|
-      csv.write(id.to_s + ";" + vocabulum.verbi.join(";") + ";" + vocabulum.schreibe_trefferliste + "\n")
+    csv.write(linguae.join(";") + ";Treffsicherheit\n")
+    vocabuli.each do |vocabulum|
+      if vocabulum.verbi.size == linguae.size
+        csv.write(vocabulum.verbi.join(";") + ";" + vocabulum.schreibe_trefferliste + "\n")
+      end
     end
     csv.close
   end
@@ -45,11 +46,9 @@ end
 
 
 class Vocabulum
-  attr_reader :id, :verbi
-  # attr_accessor :treffsicherheiten
+  attr_reader :verbi
 
-  def initialize(id, linguae, verbi, trefferliste)
-    @id = id
+  def initialize(linguae, verbi, trefferliste)
     @linguae = linguae
     @verbi = verbi
     @trefferliste = trefferliste
@@ -80,15 +79,8 @@ class Corpus
   attr_accessor :vocabuli
 
   def initialize(vocabuli,linguae)
-    @vocabuli = {}
-    vocabuli.each do |v|
-      @vocabuli[v.id] = v
-    end
+    @vocabuli = vocabuli
     @linguae = linguae
-
-    # @lima.dateiinhalt.each do |elementi|
-    #   @alleworte[elementi[0].to_i] = Verbum.new(elementi[0].to_i, elementi[1..-2], elementi[-1].to_i)
-    # end
   end
 
   def extrahiere_uebungscorpus(ausgangssprachennr, uebersetzungssprachennr, wortanzahl=5)
@@ -103,18 +95,9 @@ class Corpus
     # end
     # aus der tsliste nun von unten = ganz schwer 20%, aus der Mitte = noch nicht sicher 60% und von oben = sicher 20% nehmen
     # vorerst:
-    zu_trainierende_worte = []
-    @vocabuli.each do |id,v|
-      zu_trainierende_worte << v
-    end
+    zu_trainierende_worte = @vocabuli
     uebungscorpus = Corpus.new(zu_trainierende_worte, @linguae)
     return uebungscorpus
-  end
-
-  def aktualisiere(uebungscorpus)
-    uebungscorpus.vocabuli.each do |id,vocabulum|
-      @vocabuli[id] = vocabulum
-    end
   end
 
 end
@@ -133,15 +116,15 @@ class Trainer
 
   def training(durchlaeufe)
     durchlaeufe.times do
-      id = rand(1..@uebungscorpus.vocabuli.size)
-      aenigma(id)
+      nr = rand(1..@uebungscorpus.vocabuli.size)
+      aenigma(nr)
     end
 
     return @heute_korrekt
   end
 
-  def aenigma(id)
-    verbum = @uebungscorpus.vocabuli[id]
+  def aenigma(nr)
+    verbum = @uebungscorpus.vocabuli[nr]
     frage = verbum.verbi[@ausgangssprachennr]
     antwort = verbum.verbi[@uebersetzungssprachennr]
     system('clear')
@@ -230,7 +213,6 @@ end
 uebungscorpus = corpus.extrahiere_uebungscorpus(ausgangssprachennr, uebersetzungssprachennr, 5)
 trainer = Trainer.new(uebungscorpus, ausgangssprachennr, uebersetzungssprachennr)
 treffer = trainer.training(3)
-corpus.aktualisiere(trainer.uebungscorpus)
 uebungsdatei.speichere_neue_daten(corpus.vocabuli)
 system('clear')
 puts "Du hattest #{treffer} Treffer."
