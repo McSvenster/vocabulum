@@ -196,7 +196,7 @@ while wortliste.size < 3
   puts "#{wortliste.size + 1}. Wort bitte folgendermassen eingeben:"
   puts "deutsch:#{uebersetzungssprache}"
   woertchen = gets
-  while not woertchen.include?(":")
+  while not woertchen.include?(":") && woertchen.chomp.split(":").size == 2
     puts "Bitte das deutsche Wort und die Übersetzung durch einen Doppelpunkt getrennt eingeben."
     puts "deutsch:#{uebersetzungssprache}"
     woertchen = gets
