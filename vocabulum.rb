@@ -98,11 +98,11 @@ class Corpus
       corp_voc = Vocabulum.new(@linguae,verbi,treffer)
       @vocabuli << corp_voc
     end
-    
+
     @linguae.each do |l|
       if vocabulum.linguae.include?(l)
-        corp_voc.verbi[@linguae.index(l)] = vocabulum.verbi[@linguae.index(l)]
-        corp_voc.trefferliste[@linguae.index(l)] = vocabulum.trefferliste[@linguae.index(l)]
+        corp_voc.verbi[@linguae.index(l)] = vocabulum.verbi[vocabulum.linguae.index(l)]
+        corp_voc.trefferliste[@linguae.index(l)] = vocabulum.trefferliste[vocabulum.linguae.index(l)]
       end
     end
     
@@ -125,6 +125,9 @@ class Trainer
   def training(durchlaeufe)
     durchlaeufe.times do
       nr = rand(0...@uebungscorpus.vocabuli.size)
+      while @uebungscorpus.vocabuli[nr].verbi[@uebersetzungssprachennr] == ""
+        nr = rand(0...@uebungscorpus.vocabuli.size)
+      end
       aenigma(nr)
     end
 
