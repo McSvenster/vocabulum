@@ -1,4 +1,4 @@
 ;de;en;ita;lat;Treffsicherheit
-1;gut;good;bene;bonum;2
-2;leicht;light;facile;facilis;1
-3;einfach;easy;semplice;simplex;0
+1;gut;good;bene;bonum;1,2,0:2,3,0:3,4,0:4,0,2:0,1,0
+2;leicht;light;facile;facilis;1,2,0:2,3,0:3,4,0:4,0,1:0,1,0
+3;einfach;easy;semplice;simplex;1,2,0:2,3,0:3,4,0:4,0,0:0,1,0
