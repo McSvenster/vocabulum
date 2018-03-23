@@ -1,93 +1,105 @@
 #! /usr/bin/env ruby
 
-class Verbum
-  attr_reader :uebersetzungen
-  attr_accessor :treffsicherheit
-
-  def initialize(id, uebersetzungen, treffsicherheit=0)
-    @id = id
-    @uebersetzungen = uebersetzungen
-    @treffsicherheit = treffsicherheit
-  end
-end
-
-class Corpus
-  attr_reader :sprachen
-
-  def initialize(vondatei)
-    @lima = Lima.new(vondatei)
-    @alleworte = {}
-    @sprachen = @lima.sprachen
-
-    @lima.dateiinhalt.each do |elementi|
-      @alleworte[elementi[0].to_i] = Verbum.new(elementi[0].to_i, elementi[1..-2], elementi[-1].to_i)
-    end
-  end
-
-  def wortwolke(ausgangssprachennr, uebersetzungssprachennr, wortanzahl)
-    wortanzahl > @alleworte.size ? umfang = @alleworte.size : umfang = wortanzahl
-    tsliste = []
-    min = 10000000000 #Achtung: spaeter moegliche Fehlerquelle 
-    max = 0
-    @alleworte.each do |id, verbum|
-      min = verbum.treffsicherheit if verbum.treffsicherheit < min
-      max = verbum.treffsicherheit if verbum.treffsicherheit > max
-      tsliste[verbum.treffsicherheit] ? tsliste[verbum.treffsicherheit] << id : tsliste[verbum.treffsicherheit] = [id]
-    end
-    # aus der tsliste nun von unten = ganz schwer 20%, aus der Mitte = noch nicht sicher 60% und von oben = sicher 20% nehmen
-    # vorerst:
-    return @alleworte
-  end
-
-  def aktualisiere(verbi)
-    verbi.each do |id,verbum|
-      @alleworte[id] = verbum
-    end
-    @lima.speichere_neue_daten(@alleworte)
-  end
-
-end
-
 class Lima
-  attr_reader :sprachen, :dateiinhalt
+  attr_reader :linguae, :vocabuli
 
   def initialize(dateiname)
     @dateiname = dateiname
-    @sprachen = []
-    @dateiinhalt = []
+    @linguae = []
+    @vocabuli = []
 
     z = 0
     File.read(@dateiname).split("\n").each do |versus|
       versus.chomp! #Zeilenumbruch entfernen
       if z == 0
-        @sprachen = versus.split(";")[1..-2]
+        @linguae = versus.split(";")[1..-2]
       else
-        @dateiinhalt << versus.split(";")
+        id = versus.split(";")[0].to_i
+        verbi = versus.split(";")[1..-2]
+        treffsicherheiten = versus.split(";")[-1].to_i
+        @vocabuli << Vocabulum.new(id,@linguae,verbi,treffsicherheiten)
       end
       z += 1
     end
   end
 
-  # def get_languages
-  #   sprachenzeile = File.open(self.dateiname, "r").split("\n").first
-  #   return sprachenzeile.split(";")[1..-1] # lässt das erste, leere Element weg
-  # end
-
   def speichere_neue_daten(verbi)
     system("cp #{@dateiname} #{@dateiname}.bak")
     csv = File.open(@dateiname, "w") 
-    csv.write(";" + @sprachen.join(";") + ";Treffsicherheit\n")
+    csv.write(";" + @linguae.join(";") + ";Treffsicherheit\n")
     verbi.each do |id,verbum|
       csv.write(id.to_s + ";" + verbum.uebersetzungen.join(";") + ";" + verbum.treffsicherheit.to_s + "\n")
     end
   end
 end
 
-class Trainer
-  attr_reader :wortwolke
 
-  def initialize(wortwolke,ausgangssprachennr,uebersetzungssprachennr,mixed=false)
-    @wortwolke = wortwolke
+class Vocabulum
+  attr_reader :verbi
+  # attr_accessor :treffsicherheiten
+
+  def initialize(id, linguae, verbi, treffsicherheiten)
+    @id = id
+    @linguae = linguae
+    @verbi = verbi
+    @treffsicherheiten = treffsicherheiten
+  end
+
+  def zeige_treffer(ausgangssprachennr,uebersetzungssprachennr)
+    treffer = @treffsicherheiten[ausgangssprachennr]
+    return treffer
+  end
+
+  def schreibe_treffer(ausgangssprachennr,uebersetzungssprachennr,treffer)
+    @treffsicherheiten[ausgangssprachennr] = treffer
+  end
+
+end
+
+
+class Corpus
+  attr_reader :linguae
+
+  def initialize(verbi,linguae)
+    @verbi = verbi
+    @linguae = linguae
+
+    # @lima.dateiinhalt.each do |elementi|
+    #   @alleworte[elementi[0].to_i] = Verbum.new(elementi[0].to_i, elementi[1..-2], elementi[-1].to_i)
+    # end
+  end
+
+  def extrahiere_uebungscorpus(ausgangssprachennr, uebersetzungssprachennr, wortanzahl=5)
+    # wortanzahl > @verbi.size ? umfang = @verbi.size : umfang = wortanzahl
+    # tsliste = []
+    # min = 10000000000 #Achtung: spaeter moegliche Fehlerquelle 
+    # max = 0
+    # @verbi.each do |id, verbum|
+    #   min = verbum.treffsicherheit if verbum.treffsicherheit < min
+    #   max = verbum.treffsicherheit if verbum.treffsicherheit > max
+    #   tsliste[verbum.treffsicherheit] ? tsliste[verbum.treffsicherheit] << id : tsliste[verbum.treffsicherheit] = [id]
+    # end
+    # aus der tsliste nun von unten = ganz schwer 20%, aus der Mitte = noch nicht sicher 60% und von oben = sicher 20% nehmen
+    # vorerst:
+    zu_trainierende_worte = @verbi
+    uebungscorpus = Corpus.new(zu_trainierende_worte, @linguae)
+    return uebungscorpus
+  end
+
+  def aktualisiere(uebungscorpus)
+    uebungscorpus.each do |id,verbum|
+      @verbi[id] = verbum
+    end
+  end
+
+end
+
+
+class Trainer
+  attr_reader :uebungscorpus
+
+  def initialize(uebungscorpus,ausgangssprachennr,uebersetzungssprachennr,mixed=false)
+    @uebungscorpus = uebungscorpus
     @ausgangssprachennr = ausgangssprachennr
     @uebersetzungssprachennr = uebersetzungssprachennr
     @mixed = mixed
@@ -95,74 +107,75 @@ class Trainer
   end
 
   def training(durchlaeufe)
-    treffer = 0
     durchlaeufe.times do
-      id = rand(1..@wortwolke.size)
-      treffer += aenigma(id)
+      id = rand(1..@uebungscorpus.size)
+      aenigma(id)
     end
 
     return treffer
   end
 
   def aenigma(id)
-    verbum = @wortwolke[id]
+    verbum = @uebungscorpus[id]
     frage = verbum.uebersetzungen[@ausgangssprachennr]
     antwort = verbum.uebersetzungen[@uebersetzungssprachennr]
     system('clear')
     print "Die Übersetzung für #{frage} lautet: "
     versuch = gets
-    treffer = 0
+    treffer = verbum.zeige_treffer(ausgangssprachennr,uebersetzungssprachennr)
     if versuch.chomp! == antwort
       puts "Jawoll"
-      verbum.treffsicherheit += 1
+      treffer += 1
       sleep 1
       return 1
     else
       puts "Nope :-( Die Antwort lautet ::::  #{antwort}  ::::"
-      verbum.treffsicherheit -= 1 if verbum.treffsicherheit > 0
+      treffer -= 1 if treffer > 0
       sleep 2
       return 0
     end
+    verbum.schreibe_treffer(ausgangssprachennr,uebersetzungssprachennr,treffer)
   end
 
 end
 
 puts "Dann wollen wir mal..."
-corpus = Corpus.new("verbi.csv")
+uebungsdatei = Lima.new("verbi.csv")
+corpus = Corpus.new(uebungsdatei.vocabuli, uebungsdatei.linguae)
 puts "Ich habe folgende Sprachen zur Auswahl:"
-puts corpus.sprachen.join(",")
+puts corpus.linguae.join(",")
 print "Welche Sprache soll Deine Ausgangssprache sein [de] : "
 ausgangssprache = gets
 ausgangssprache.chomp!
 if ausgangssprache == ""
-  ausgangssprachennr = corpus.sprachen.index("de")
+  ausgangssprachennr = corpus.linguae.index("de")
 else
-  while not corpus.sprachen.include?(ausgangssprache)
+  while not corpus.linguae.include?(ausgangssprache)
     puts "#{ausgangssprache} habe ich nicht im Angebot. Bitte wähle zwischen"
-    puts corpus.sprachen.join(",")
+    puts corpus.linguae.join(",")
     print "Welche Sprache soll Deine Ausgangssprache sein [de] : "
     ausgangssprache = gets
     ausgangssprache.chomp!
   end
-  ausgangssprachennr = corpus.sprachen.index(ausgangssprache)
+  ausgangssprachennr = corpus.linguae.index(ausgangssprache)
 end
 
 print "OK, und welche der o.g. Sprachen möchtest Du üben? : "
 
 uebersetzungssprache = gets
 uebersetzungssprache.chomp!
-while not corpus.sprachen.include?(uebersetzungssprache)
+while not corpus.linguae.include?(uebersetzungssprache)
   puts "#{uebersetzungssprache} habe ich nicht im Angebot. Bitte wähle zwischen"
-  puts corpus.sprachen.join(",")
+  puts corpus.linguae.join(",")
   print "Welche Sprache möchtest Du lernen? : "
   uebersetzungssprache = gets
   uebersetzungssprache.chomp!
 end
-uebersetzungssprachennr = corpus.sprachen.index(uebersetzungssprache)
+uebersetzungssprachennr = corpus.linguae.index(uebersetzungssprache)
 
-zu_trainierende_worte = corpus.wortwolke(ausgangssprachennr, uebersetzungssprachennr, 5)
-trainer = Trainer.new(zu_trainierende_worte, ausgangssprachennr, uebersetzungssprachennr)
+uebungscorpus = corpus.extrahiere_uebungscorpus(ausgangssprachennr, uebersetzungssprachennr, 5)
+trainer = Trainer.new(uebungscorpus, ausgangssprachennr, uebersetzungssprachennr)
 treffer = trainer.training(3)
-corpus.aktualisiere(trainer.wortwolke)
+corpus.aktualisiere(trainer.uebungscorpus)
 system('clear')
 puts "Du hattest #{treffer} Treffer."
