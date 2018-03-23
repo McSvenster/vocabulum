@@ -166,27 +166,34 @@ class Trainer
 end
 
 puts "Dann wollen wir mal..."
+
+## Daten einlesen
 uebungsdatei = Lima.new("verbi.csv")
+
+## gesamten Corpus bauen
 corpus = Corpus.new(uebungsdatei.vocabuli, uebungsdatei.linguae)
+
+## Uebungssprache festlegen
 puts "Ich habe folgende Sprachen zur Auswahl:"
 puts corpus.linguae.join(",")
-print "Welche Sprache soll Deine Ausgangssprache sein [de] : "
-ausgangssprache = gets
-ausgangssprache.chomp!
-if ausgangssprache == ""
-  ausgangssprachennr = corpus.linguae.index("de")
-else
-  while not corpus.linguae.include?(ausgangssprache)
-    puts "#{ausgangssprache} habe ich nicht im Angebot. Bitte wähle zwischen"
-    puts corpus.linguae.join(",")
-    print "Welche Sprache soll Deine Ausgangssprache sein [de] : "
-    ausgangssprache = gets
-    ausgangssprache.chomp!
-  end
-  ausgangssprachennr = corpus.linguae.index(ausgangssprache)
-end
+# print "Welche Sprache soll Deine Ausgangssprache sein [de] : "
+# ausgangssprache = gets
+# ausgangssprache.chomp!
+# if ausgangssprache == ""
+#   ausgangssprachennr = corpus.linguae.index("de")
+# else
+#   while not corpus.linguae.include?(ausgangssprache)
+#     puts "#{ausgangssprache} habe ich nicht im Angebot. Bitte wähle zwischen"
+#     puts corpus.linguae.join(",")
+#     print "Welche Sprache soll Deine Ausgangssprache sein [de] : "
+#     ausgangssprache = gets
+#     ausgangssprache.chomp!
+#   end
+#   ausgangssprachennr = corpus.linguae.index(ausgangssprache)
+# end
+ausgangssprachennr = corpus.linguae.index("de")
 
-print "OK, und welche der o.g. Sprachen möchtest Du üben? : "
+print "Welche der o.g. Sprachen möchtest Du üben? : "
 
 uebersetzungssprache = gets
 uebersetzungssprache.chomp!
@@ -198,6 +205,27 @@ while not corpus.linguae.include?(uebersetzungssprache)
   uebersetzungssprache.chomp!
 end
 uebersetzungssprachennr = corpus.linguae.index(uebersetzungssprache)
+
+## 3 neue Vokabeln eingeben
+puts "Im ersten Schritt erfassen wir drei neue Vokabeln."
+wortliste = {}
+while wortliste.size < 3
+  puts "#{wortliste.size + 1}. Wort bitte folgendermassen eingeben:"
+  puts "deutsch:#{uebersetzungssprache}"
+  woertchen = gets
+  while not woertchen.include?(":")
+    puts "Bitte das deutsche Wort und die Übersetzung durch einen Doppelpunkt getrennt eingeben."
+    puts "deutsch:#{uebersetzungssprache}"
+    woertchen = gets
+  end
+  woertchen.chomp!
+  wort,uebersetzung = woertchen.split(":")
+  wort = wort.split()
+  uebersetzung = uebersetzung.split()
+  wortliste[wort] = uebersetzung
+end
+
+## neue Vokabeln dem Corpus hinzufuegen
 
 uebungscorpus = corpus.extrahiere_uebungscorpus(ausgangssprachennr, uebersetzungssprachennr, 5)
 trainer = Trainer.new(uebungscorpus, ausgangssprachennr, uebersetzungssprachennr)
