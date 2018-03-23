@@ -36,7 +36,7 @@ end
 
 
 class Vocabulum
-  attr_reader :verbi
+  attr_accessor :linguae, :verbi, :trefferliste
 
   def initialize(linguae, verbi, trefferliste)
     @linguae = linguae
@@ -54,21 +54,6 @@ class Vocabulum
 
   def schreibe_trefferliste()
     return @trefferliste.join(",")
-  end
-
-  def erweitere(corpus_linguae)
-    corpus_verbi = []
-    corpus_trefferliste = []
-    corpus_linguae.each do |l|
-      if @linguae.include?(l)
-        corpus_verbi[corpus_linguae.index(l)] = @verbi[@linguae.index(l)]
-        corpus_trefferliste[corpus_linguae.index(l)] = @trefferliste[@linguae.index(l)]
-      else
-        corpus_verbi[corpus_linguae.index(l)] = ""
-        corpus_trefferliste[corpus_linguae.index(l)] = 0
-      end
-    end
-    return Vocabulum.new(corpus_linguae, corpus_verbi, corpus_trefferliste)
   end
 
 end
@@ -101,7 +86,25 @@ class Corpus
   end
 
   def ergaenze(vocabulum)
-    @vocabuli << vocabulum.erweitere(linguae)
+    if @vocabuli.any? { |v| v.verbi.include?(vocabulum.verbi.first) }
+      corp_voc = @vocabuli.find { |v| v.verbi.include?(vocabulum.verbi.first) }
+    else
+      verbi = []
+      treffer = []
+      (0...@linguae.size).each do |c|
+        verbi[c] = ""
+        treffer[c] = 0
+      end
+      corp_voc = Vocabulum.new(@linguae,verbi,treffer)
+      @vocabuli << corp_voc
+    end
+    
+    @linguae.each do |l|
+      if vocabulum.linguae.include?(l)
+        corp_voc.verbi[@linguae.index(l)] = vocabulum.verbi[@linguae.index(l)]
+        corp_voc.trefferliste[@linguae.index(l)] = vocabulum.trefferliste[@linguae.index(l)]
+      end
+    end
     
   end
 
@@ -121,7 +124,7 @@ class Trainer
 
   def training(durchlaeufe)
     durchlaeufe.times do
-      nr = rand(0..@uebungscorpus.vocabuli.size-1)
+      nr = rand(0...@uebungscorpus.vocabuli.size)
       aenigma(nr)
     end
 
