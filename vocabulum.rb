@@ -95,6 +95,7 @@ class Corpus
         verbi[c] = ""
         treffer[c] = 0
       end
+      treffer.shift
       corp_voc = Vocabulum.new(@linguae,verbi,treffer)
       @vocabuli << corp_voc
     end
@@ -102,7 +103,9 @@ class Corpus
     @linguae.each do |l|
       if vocabulum.linguae.include?(l)
         corp_voc.verbi[@linguae.index(l)] = vocabulum.verbi[vocabulum.linguae.index(l)]
-        corp_voc.trefferliste[@linguae.index(l)] = vocabulum.trefferliste[vocabulum.linguae.index(l)]
+        unless l == "de"
+          corp_voc.trefferliste[@linguae.index(l)-1] = vocabulum.trefferliste[vocabulum.linguae.index(l)-1]
+        end
       end
     end
     

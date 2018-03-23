@@ -1,4 +1,17 @@
 de;en;ita;lat;Treffsicherheit
-gut;good;bene;bonum;1,2,3,0:2,3,4,0:3,4,0,2:4,0,1,0:0,1,2,0
-leicht;light;facile;facilis;1,2,3,0:2,3,4,0:3,4,0,1:4,0,1,0:0,1,2,0
-einfach;easy;semplice;simplex;1,2,3,0:2,3,4,0:3,4,0,0:4,0,1,0:0,1,2,0
+gut;good;bene;bonum;4,0,0
+leicht;light;facile;facilis;2,0,0
+einfach;easy;semplice;simplex;1,2,0
+sehen;to see;vedere;;0,0,0
+Meer;sea;;mare;2,1,1
+lesen;to read;leggere;;0,2,0
+trinken;to drink;bere;;1,2,0
+müde;;stanco, stanca;;1,0,0
+Licht;light;;;1,0,0
+hören;to hear;sentire;;0,0,0
+Klang;sound;;;1,0,0
+Buch;book;il libro;;2,0,0
+König;king;;rex;0,0,1
+Stadt;;;urbs;0,0,1
+Auto;car;;;1,0,0
+sitzen;to sit;;;0,0,0
