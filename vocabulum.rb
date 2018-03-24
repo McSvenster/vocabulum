@@ -153,7 +153,7 @@ class Trainer
     else
       puts "Nope :-( Die Antwort lautet ::::  #{antwort}  ::::"
       treffer -= 1 if treffer > 0
-      sleep 2
+      sleep 4
     end
     verbum.schreibe_treffer(@uebersetzungssprachennr,treffer)
   end
@@ -230,7 +230,7 @@ end
 
 uebungscorpus = corpus.extrahiere_uebungscorpus(ausgangssprachennr, uebersetzungssprachennr, 5)
 trainer = Trainer.new(uebungscorpus, ausgangssprachennr, uebersetzungssprachennr)
-treffer = trainer.training(3)
+treffer = trainer.training(10)
 uebungsdatei.speichere_neue_daten(corpus)
 system('clear')
 puts "Du hattest #{treffer} Treffer."
