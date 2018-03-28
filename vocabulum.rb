@@ -68,20 +68,45 @@ class Corpus
     @linguae = linguae
   end
 
-  def extrahiere_uebungscorpus(ausgangssprachennr, uebersetzungssprachennr, wortanzahl=5)
-    # wortanzahl > @vocabuli.size ? umfang = @vocabuli.size : umfang = wortanzahl
-    # tsliste = []
-    # min = 10000000000 #Achtung: spaeter moegliche Fehlerquelle 
-    # max = 0
-    # @vocabuli.each do |id, verbum|
-    #   min = verbum.treffsicherheit if verbum.treffsicherheit < min
-    #   max = verbum.treffsicherheit if verbum.treffsicherheit > max
-    #   tsliste[verbum.treffsicherheit] ? tsliste[verbum.treffsicherheit] << id : tsliste[verbum.treffsicherheit] = [id]
-    # end
-    # aus der tsliste nun von unten = ganz schwer 20%, aus der Mitte = noch nicht sicher 60% und von oben = sicher 20% nehmen
-    # vorerst:
-    zu_trainierende_worte = @vocabuli
-    uebungscorpus = Corpus.new(zu_trainierende_worte, @linguae)
+  def extrahiere_uebungscorpus(uebersetzungssprachennr, wortanzahl=5)
+    wortanzahl > @vocabuli.size ? umfang = @vocabuli.size : umfang = wortanzahl
+    sortierte_liste = sortiere_anhand_treffer(uebersetzungssprachennr)
+    # jetzt haben wir eine sortierte Liste: am Anfang die unsichersten Worte, 
+    # am Ende die sichersten
+    # teilen wir jetzt in drei Pakete:
+    # ganz unsicher (uv) 20%, noch nicht sicher (nsv) 60% und sicher (sv) 20%
+    rz = (sortierte_liste.size / 5).to_i
+    uv = sortierte_liste[0...rz]
+    nsv = sortierte_liste[rz...-rz]
+    sv = sortierte_liste[-rz..-1]
+    # nun müssen wir eine entsprechende Anzahl Worte aus jedem Bereich
+    # zufällig auswählen, so dass alle Bereiche entsprechend der Prozent-
+    # Zahlen vertreten sind und der Uebungsumfang erreicht wird.
+    # für unsichere (uv) und sivere Vokabeln (sv) kann ich dieselbe
+    # Schleife verwenden - es sollen beide mit je 20% Vertreten sein 
+    uebungsliste = []
+    (umfang / 5).to_i.times do
+      uebungsliste << uv[rand(0...uv.size)] # zufälliges Element aus uv
+      uebungsliste << sv[rand(0...sv.size)] # zufälliges Element aus sv
+    end
+    # jetzt noch die nsv
+    (umfang * 3/5).to_i.times do
+      uebungsliste << nsv[rand(0..nsv.size)] # zufälliges Element aus nsv
+    end
+    # jetzt fange ich noch ab, dass durch das Runden oben (to_i) die uebungs-
+    # liste nicht dem Umfang entsprechen könnte
+    if uebungsliste.size - umfang > 0
+      (uebungsliste.size - umfang).times do
+        uebungsliste.delete_at(rand(0...uebungsliste.size))
+      end
+    end
+    if uebungsliste.size - umfang  < 0
+      (umfang - uebungsliste.size).times do
+        uebungsliste << sortierte_liste[rand(0...sortierte_liste.size)]
+      end
+    end
+    # Und schliesslich baue ich den uebungscorpus anhand der uebungsliste.
+    uebungscorpus = Corpus.new(uebungsliste, @linguae)
     return uebungscorpus
   end
 
@@ -107,6 +132,15 @@ class Corpus
           corp_voc.trefferliste[@linguae.index(l)-1] = vocabulum.trefferliste[vocabulum.linguae.index(l)-1]
         end
       end
+    end
+    
+  end
+
+  def sortiere_anhand_treffer(uebersetzungssprachennr)
+    # das funktioniert so nicht - die Sortierung soll ja anhand der
+    # Treffer bei der Übersetzungssprache gemacht werden
+    @vocabuli.sort_by {|_key, value| value}.each do |vocabulum,t|
+      sortierte_liste << vocabulum
     end
     
   end
@@ -171,7 +205,7 @@ corpus = Corpus.new(uebungsdatei.vocabuli, uebungsdatei.linguae)
 
 ## Uebungssprache festlegen
 puts "Ich habe folgende Sprachen zur Auswahl:"
-puts corpus.linguae.join(",")
+puts corpus.linguae[1..-1].join(",")
 # print "Welche Sprache soll Deine Ausgangssprache sein [de] : "
 # ausgangssprache = gets
 # ausgangssprache.chomp!
@@ -228,7 +262,7 @@ wortliste.each do |w,u|
 end
 
 
-uebungscorpus = corpus.extrahiere_uebungscorpus(ausgangssprachennr, uebersetzungssprachennr, 5)
+uebungscorpus = corpus.extrahiere_uebungscorpus(uebersetzungssprachennr, 5)
 trainer = Trainer.new(uebungscorpus, ausgangssprachennr, uebersetzungssprachennr)
 treffer = trainer.training(10)
 uebungsdatei.speichere_neue_daten(corpus)
