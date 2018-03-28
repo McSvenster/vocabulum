@@ -137,12 +137,18 @@ class Corpus
   end
 
   def sortiere_anhand_treffer(uebersetzungssprachennr)
-    # das funktioniert so nicht - die Sortierung soll ja anhand der
-    # Treffer bei der Übersetzungssprache gemacht werden
-    @vocabuli.sort_by {|_key, value| value}.each do |vocabulum,t|
-      sortierte_liste << vocabulum
+    # als erstes baue ich einen hash mit Wort und Übersetzungstreffer
+    interims_hash = {}
+    @vocabuli.each do |vocabulum|
+      interims_hash[vocabulum.verbi[0]] = vocabulum.trefferliste[uebersetzungssprachennr-1].to_i
+    end
+    # Dieser wird nun sortiert nach Treffern
+    sortierte_liste = []
+    interims_hash.sort_by {|_key, value| value}.each do |verbum,t|
+      sortierte_liste << @vocabuli.find { |v| v.verbi.include?(verbum) }
     end
     
+    return sortierte_liste
   end
 
 end
